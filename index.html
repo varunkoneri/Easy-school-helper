@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Easy Study Helper</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Oswald:wght@500;600;700&display=swap');
+
+:root{
+  --bg: #0B0C0E;
+  --panel: #131519;
+  --panel-line: rgba(255,159,28,0.22);
+  --amber: #FF9F1C;
+  --amber-dim: #8C6522;
+  --amber-glow: rgba(255,159,28,0.35);
+  --red: #E8483C;
+  --green: #46C48E;
+  --text-dim: #7C8087;
+  --shadow: rgba(0,0,0,0.6);
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:'Space Mono', monospace;
+  color:var(--amber);
+  background:var(--bg);
+  padding:34px 16px 60px;
+  display:flex;
+  justify-content:center;
+  position:relative;
+}
+
+body::before{
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(
+    to bottom, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px,
+    transparent 1px, transparent 3px
+  );
+  pointer-events:none;
+  z-index:1;
+}
+
+.app{ width:100%; max-width:740px; position:relative; z-index:2; }
+
+header{ margin-bottom:8px; display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+header h1{
+  font-family:'Oswald', sans-serif;
+  font-weight:700;
+  font-size:1.9rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin:0;
+  color:var(--amber);
+  text-shadow: 0 0 14px var(--amber-glow);
+}
+header .clock-tag{
+  font-size:0.78rem;
+  color:var(--text-dim);
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+
+.tagline{
+  font-size:0.8rem;
+  color:var(--text-dim);
+  letter-spacing:1px;
+  margin-bottom:20px;
+  text-transform:uppercase;
+}
+
+.tabs{ display:flex; gap:4px; margin-bottom:0; }
+.tab{
+  font-family:'Oswald', sans-serif;
+  font-weight:600;
+  font-size:0.85rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  padding:10px 20px;
+  border:1px solid var(--panel-line);
+  border-bottom:none;
+  background:var(--bg);
+  color:var(--text-dim);
+  cursor:pointer;
+}
+.tab.active{ background:var(--panel); color:var(--amber); }
+.tab:hover:not(.active){ color:var(--amber); }
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--panel-line);
+  padding:0;
+  box-shadow: 0 14px 40px var(--shadow);
+  min-height:460px;
+}
+.hidden{ display:none; }
+
+/* ---------- Departure board ---------- */
+.board-header{
+  display:grid;
+  grid-template-columns: 46px 1fr 110px 90px 110px;
+  gap:8px;
+  padding:16px 18px;
+  font-size:0.72rem;
+  letter-spacing:2px;
+  color:var(--text-dim);
+  border-bottom:1px solid var(--panel-line);
+  text-transform:uppercase;
+}
+.board-rows{ display:flex; flex-direction:column; }
+.board-row{
+  display:grid;
+  grid-template-columns: 46px 1fr 110px 90px 110px;
+  align-items:center;
+  gap:8px;
+  padding:16px 18px;
+  border-bottom:1px solid var(--panel-line);
+  cursor:pointer;
+  transition: background 0.15s ease;
+}
+.board-row:hover{ background:rgba(255,159,28,0.06); }
+.row-code{ color:var(--text-dim); font-size:0.85rem; }
+.row-subject{
+  font-family:'Oswald', sans-serif;
+  font-weight:600;
+  font-size:1.05rem;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.row-gates{ font-size:0.78rem; color:var(--text-dim); }
+.row-time{ font-size:0.85rem; }
+.row-status{
+  font-size:0.72rem;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  padding:5px 10px;
+  text-align:center;
+  border:1px solid var(--amber);
+  color:var(--amber);
+}
+.row-status.social{ border-color:var(--red); color:var(--red); }
+
+.custom-row{
+  padding:16px 18px;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  font-size:0.78rem; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase;
+}
+.custom-row input{
+  width:70px; font-family:'Space Mono', monospace;
+  padding:7px 8px; border:1px solid var(--panel-line);
+  background:var(--bg); color:var(--amber);
+}
+.custom-row button{
+  font-family:'Oswald', sans-serif; font-weight:600; font-size:0.78rem; letter-spacing:1.5px;
+  text-transform:uppercase;
+  padding:8px 16px; border:1px solid var(--amber);
+  background:transparent; color:var(--amber); cursor:pointer;
+}
+.custom-row button:hover{ background:rgba(255,159,28,0.1); }
+
+/* ---------- Social sub-board ---------- */
+.back-link{
+  display:block;
+  background:none; border:none; cursor:pointer; text-decoration:underline;
+  color:var(--text-dim); font-size:0.78rem; letter-spacing:1px; text-transform:uppercase;
+  padding:16px 18px 0;
+}
+.sub-title{
+  font-family:'Oswald', sans-serif; font-weight:600; font-size:1.1rem;
+  letter-spacing:2px; text-transform:uppercase; color:var(--red);
+  padding:14px 18px 0;
+}
+.sub-note{ font-size:0.75rem; color:var(--text-dim); padding:4px 18px 10px; letter-spacing:1px; text-transform:uppercase; }
+
+/* ---------- Session (boarding) ---------- */
+.session-view{ display:flex; flex-direction:column; align-items:center; gap:20px; padding:34px 20px 40px; }
+.boarding-tag{
+  font-size:0.78rem; letter-spacing:3px; color:var(--text-dim); text-transform:uppercase;
+}
+.session-subject{
+  font-family:'Oswald', sans-serif; font-weight:700; font-size:1.7rem;
+  letter-spacing:1.5px; text-transform:uppercase;
+  color: var(--accent, var(--amber));
+}
+.flap-row{ display:flex; align-items:center; gap:6px; }
+.flap-digit{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:0.95em; padding:10px 8px;
+  background:#0E0F12;
+  color: var(--accent, var(--amber));
+  font-family:'Space Mono', monospace;
+  font-weight:700; font-size:3rem;
+  border:1px solid var(--panel-line);
+  border-radius:4px;
+  position:relative;
+  box-shadow: inset 0 -10px 14px rgba(0,0,0,0.35);
+}
+.flap-digit::after{
+  content:''; position:absolute; left:2px; right:2px; top:50%;
+  height:1px; background:rgba(0,0,0,0.55);
+}
+.flap-digit.flip{ animation: flapAnim 0.3s ease; }
+@keyframes flapAnim{
+  0%{ transform:rotateX(0deg); }
+  45%{ transform:rotateX(85deg); opacity:0.7; }
+  55%{ transform:rotateX(85deg); opacity:0.7; }
+  100%{ transform:rotateX(0deg); }
+}
+.flap-colon{ font-size:2.4rem; color:var(--text-dim); }
+.session-controls{ display:flex; gap:10px; margin-top:6px; }
+.session-controls button{
+  font-family:'Oswald', sans-serif; font-weight:600; font-size:0.85rem; letter-spacing:2px;
+  text-transform:uppercase;
+  padding:10px 24px; border:none; cursor:pointer;
+}
+.btn-primary{ background:var(--accent, var(--amber)); color:#0B0C0E; }
+.btn-secondary{ background:transparent; border:1px solid var(--panel-line) !important; color:var(--amber); }
+
+.finished-view{ text-align:center; padding:60px 20px; }
+.finished-view .big{
+  font-family:'Oswald', sans-serif; font-weight:700; font-size:1.8rem;
+  letter-spacing:2px; text-transform:uppercase;
+  color:var(--green); margin-bottom:10px;
+}
+.finished-view p{ color:var(--text-dim); margin-bottom:24px; font-size:0.85rem; letter-spacing:1px; text-transform:uppercase; }
+.finished-view button{
+  font-family:'Oswald', sans-serif; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+  padding:10px 26px; border:none; background:var(--green); color:#0B0C0E; cursor:pointer;
+}
+
+/* ---------- Flashcards (boarding pass) ---------- */
+.card-form{
+  display:flex; flex-direction:column; gap:8px; margin:18px;
+  padding:16px; border:1px dashed var(--panel-line);
+}
+.card-form input{
+  font-family:'Space Mono'; font-size:0.9rem;
+  padding:9px 12px; border:1px solid var(--panel-line);
+  background:var(--bg); color:var(--amber);
+}
+.card-form button{
+  align-self:flex-end;
+  font-family:'Oswald', sans-serif; font-weight:600; font-size:0.8rem; letter-spacing:2px; text-transform:uppercase;
+  padding:8px 18px; border:none;
+  background:var(--amber); color:#0B0C0E; cursor:pointer;
+}
+.flash-count{ font-size:0.75rem; color:var(--text-dim); margin:0 18px 10px; letter-spacing:1px; text-transform:uppercase; }
+.flash-stage{ display:flex; flex-direction:column; align-items:center; gap:14px; padding:0 18px 24px; }
+.flip-card{ width:100%; max-width:420px; height:220px; perspective:1000px; cursor:pointer; }
+.flip-inner{ position:relative; width:100%; height:100%; transition:transform 0.5s; transform-style:preserve-3d; }
+.flip-card.flipped .flip-inner{ transform:rotateY(180deg); }
+.flip-face{
+  position:absolute; inset:0; backface-visibility:hidden;
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:24px; font-family:'Oswald',sans-serif; font-size:1.2rem;
+  border:1px dashed var(--panel-line);
+  box-shadow: 0 6px 18px var(--shadow);
+}
+.flip-front{ background:#0E0F12; color:var(--amber); }
+.flip-back{ background:var(--amber); color:#0B0C0E; transform:rotateY(180deg); }
+.flash-nav{ display:flex; gap:12px; align-items:center; }
+.flash-nav button{
+  font-family:'Oswald', sans-serif; font-weight:600; font-size:0.78rem; letter-spacing:1.5px; text-transform:uppercase;
+  padding:8px 16px; border:1px solid var(--panel-line);
+  background:transparent; cursor:pointer; color:var(--amber);
+}
+.flash-nav button:hover{ background:rgba(255,159,28,0.08); }
+.delete-card{ font-size:0.75rem; color:var(--red); background:none; border:none; cursor:pointer; text-decoration:underline; text-transform:uppercase; letter-spacing:1px; }
+.empty-state{ text-align:center; color:var(--text-dim); padding:50px 18px; font-size:0.85rem; letter-spacing:1px; text-transform:uppercase; }
+
+/* ---------- Tasks (gate assignments) ---------- */
+.task-form{ display:flex; flex-wrap:wrap; gap:8px; margin:18px; }
+.task-form input[type=text]{
+  flex:1; min-width:180px; font-family:'Space Mono'; font-size:0.9rem;
+  padding:10px 12px; border:1px solid var(--panel-line);
+  background:var(--bg); color:var(--amber);
+}
+.task-form input[type=datetime-local]{
+  font-family:'Space Mono'; font-size:0.85rem;
+  padding:9px 10px; border:1px solid var(--panel-line);
+  background:var(--bg); color:var(--amber);
+}
+.task-form button{
+  font-family:'Oswald', sans-serif; font-weight:600; letter-spacing:2px; text-transform:uppercase; font-size:0.8rem;
+  padding:10px 18px; border:none; background:var(--amber); color:#0B0C0E; cursor:pointer;
+}
+.task-list{ list-style:none; padding:0 18px; margin:0; display:flex; flex-direction:column; gap:10px; }
+.task-item{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:12px 14px; border:1px solid var(--panel-line);
+  background:#0E0F12;
+}
+.task-item.done{ opacity:0.45; }
+.task-item.done .task-text{ text-decoration:line-through; }
+.task-item.overdue:not(.done){ border-color:var(--red); }
+.task-item input[type=checkbox]{ width:18px; height:18px; accent-color:var(--amber); cursor:pointer; }
+.task-main{ flex:1; min-width:160px; display:flex; flex-direction:column; gap:2px; }
+.task-text{ font-size:0.9rem; }
+.task-deadline{ font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; }
+.task-countdown{
+  font-family:'Space Mono', monospace; font-weight:700; font-size:0.78rem;
+  padding:5px 10px; background:var(--green); color:#0B0C0E;
+  white-space:nowrap;
+}
+.task-countdown.overdue{ background:var(--red); color:#0B0C0E; }
+.task-countdown.due-soon{ background:var(--amber); }
+.task-item .remove{
+  background:none; border:none; color:var(--text-dim); cursor:pointer;
+  font-size:1.1rem; line-height:1; padding:2px 6px;
+}
+.task-item .remove:hover{ color:var(--red); }
+.task-progress{ margin:16px 18px 22px; font-size:0.78rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+
+footer.note{
+  text-align:center; margin-top:18px; font-size:0.72rem; color:var(--text-dim);
+  letter-spacing:1.5px; text-transform:uppercase;
+}
+
+@media (max-width:640px){
+  .board-header, .board-row{ grid-template-columns: 32px 1fr 70px 60px 76px; font-size:0.7rem; }
+  .row-subject{ font-size:0.88rem; }
+  .flap-digit{ font-size:2rem; padding:8px 6px; }
+  header h1{ font-size:1.4rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>Easy Study Helper</h1>
+    <div class="clock-tag" id="liveClock">--:--:--</div>
+  </header>
+  <div class="tagline">All sessions depart on time</div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="subjects">Subjects</div>
+    <div class="tab" data-tab="flashcards">Flashcards</div>
+    <div class="tab" data-tab="tasks">Tasks</div>
+  </div>
+
+  <div class="panel" id="panel-subjects">
+
+    <div id="subjectPicker">
+      <div class="board-header">
+        <div>NO.</div><div>SUBJECT</div><div>GATES</div><div>TIME</div><div>STATUS</div>
+      </div>
+      <div class="board-rows" id="boardRows"></div>
+      <div class="custom-row">
+        <span>Custom session:</span>
+        <input type="number" id="customMinutes" min="1" max="240" placeholder="mins">
+        <button id="startCustomBtn">Board</button>
+      </div>
+    </div>
+
+    <div class="hidden" id="socialToc">
+      <button class="back-link" id="backFromToc">&larr; Back to board</button>
+      <div class="sub-title">Social Studies — 3 Gates</div>
+      <div class="sub-note">Select a chapter to begin boarding</div>
+      <div class="board-header" style="border-top:1px solid var(--panel-line);">
+        <div>NO.</div><div>CHAPTER</div><div></div><div>TIME</div><div>STATUS</div>
+      </div>
+      <div class="board-rows" id="chapterRows"></div>
+    </div>
+
+    <div class="session-view hidden" id="sessionView">
+      <button class="back-link" id="backToSubjects" style="padding-left:0;">&larr; Choose something else</button>
+      <div class="boarding-tag">Now boarding</div>
+      <div class="session-subject" id="sessionSubjectName">Maths</div>
+      <div class="flap-row" id="flapRow">
+        <div class="flap-digit" id="d0">6</div>
+        <div class="flap-digit" id="d1">0</div>
+        <div class="flap-colon">:</div>
+        <div class="flap-digit" id="d2">0</div>
+        <div class="flap-digit" id="d3">0</div>
+      </div>
+      <div class="session-controls">
+        <button class="btn-primary" id="startPauseBtn">Start</button>
+        <button class="btn-secondary" id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="finished-view hidden" id="finishedView">
+      <div class="big" id="finishedSubjectName">Arrived</div>
+      <p>Session complete — nice work.</p>
+      <button id="finishedBackBtn">Back to board</button>
+    </div>
+
+  </div>
+
+  <div class="panel hidden" id="panel-flashcards">
+    <div class="card-form">
+      <input type="text" id="cardFront" placeholder="Front — question or term">
+      <input type="text" id="cardBack" placeholder="Back — answer or definition">
+      <button id="addCardBtn">Add card</button>
+    </div>
+    <div id="flashArea"></div>
+  </div>
+
+  <div class="panel hidden" id="panel-tasks">
+    <form class="task-form" id="taskForm">
+      <input type="text" id="taskInput" placeholder="Task to finish… (e.g. Finish worksheet 2)">
+      <input type="datetime-local" id="taskDeadline" required>
+      <button type="submit">Assign</button>
+    </form>
+    <ul class="task-list" id="taskList"></ul>
+    <div class="task-progress" id="taskProgress"></div>
+  </div>
+
+  <footer class="note">saved automatically — pick up right where you left off</footer>
+</div>
+
+<script>
+/* ---------------- Live clock ---------------- */
+function updateLiveClock(){
+  const d = new Date();
+  document.getElementById('liveClock').textContent = d.toLocaleTimeString(undefined,{hour12:false});
+}
+updateLiveClock();
+setInterval(updateLiveClock, 1000);
+
+/* ---------------- Tab switching ---------------- */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.add('hidden'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.remove('hidden');
+  });
+});
+
+/* ---------------- Departure board ---------------- */
+const SUBJECTS = [
+  {name:'Maths', minutes:60, gates:'Direct', color:'#FF9F1C'},
+  {name:'English', minutes:45, gates:'Direct', color:'#FF9F1C'},
+  {name:'Science', minutes:45, gates:'Direct', color:'#FF9F1C'},
+  {name:'Social', minutes:null, gates:'3 Gates', color:'#E8483C', isSocial:true}
+];
+
+const CHAPTERS = [
+  {name:'History', minutes:40},
+  {name:'Geography', minutes:40},
+  {name:'Civics', minutes:30}
+];
+
+const rowsEl = document.getElementById('boardRows');
+SUBJECTS.forEach((s,i)=>{
+  const row = document.createElement('div');
+  row.className = 'board-row';
+  row.innerHTML = `
+    <div class="row-code">0${i+1}</div>
+    <div class="row-subject">${s.name}</div>
+    <div class="row-gates">${s.gates}</div>
+    <div class="row-time">${s.minutes ? s.minutes+' MIN' : '—'}</div>
+    <div class="row-status ${s.isSocial?'social':''}">${s.isSocial ? 'SELECT' : 'BOARD'}</div>
+  `;
+  row.addEventListener('click', ()=>{
+    if(s.isSocial){ showSocialToc(); }
+    else { startSession(s.name, s.minutes, s.color); }
+  });
+  rowsEl.appendChild(row);
+});
+
+const chapterRowsEl = document.getElementById('chapterRows');
+CHAPTERS.forEach((c,i)=>{
+  const row = document.createElement('div');
+  row.className = 'board-row';
+  row.innerHTML = `
+    <div class="row-code">04${String.fromCharCode(65+i)}</div>
+    <div class="row-subject">${c.name}</div>
+    <div class="row-gates"></div>
+    <div class="row-time">${c.minutes} MIN</div>
+    <div class="row-status">BOARD</div>
+  `;
+  row.addEventListener('click', ()=> startSession('Social — '+c.name, c.minutes, '#E8483C'));
+  chapterRowsEl.appendChild(row);
+});
+
+function showSocialToc(){
+  document.getElementById('subjectPicker').classList.add('hidden');
+  document.getElementById('socialToc').classList.remove('hidden');
+}
+document.getElementById('backFromToc').addEventListener('click', ()=>{
+  document.getElementById('socialToc').classList.add('hidden');
+  document.getElementById('subjectPicker').classList.remove('hidden');
+});
+
+document.getElementById('startCustomBtn').addEventListener('click', ()=>{
+  const mins = parseInt(document.getElementById('customMinutes').value);
+  if(!mins || mins<=0) return;
+  startSession('Custom session', mins, '#FF9F1C');
+});
+
+/* ---------------- Timer with split-flap digits ---------------- */
+let totalSeconds = 60*60;
+let remaining = totalSeconds;
+let running = false;
+let timerInterval = null;
+let lastDigits = ['-','-','-','-'];
+
+function updateDisplay(){
+  const m = Math.floor(remaining/60).toString().padStart(2,'0');
+  const s = Math.floor(remaining%60).toString().padStart(2,'0');
+  const newDigits = [m[0], m[1], s[0], s[1]];
+  newDigits.forEach((val,i)=>{
+    const el = document.getElementById('d'+i);
+    if(lastDigits[i] !== val){
+      el.textContent = val;
+      el.classList.remove('flip');
+      void el.offsetWidth; // restart animation
+      el.classList.add('flip');
+    }
+  });
+  lastDigits = newDigits;
+}
+
+function startSession(name, minutes, color){
+  document.getElementById('subjectPicker').classList.add('hidden');
+  document.getElementById('socialToc').classList.add('hidden');
+  document.getElementById('finishedView').classList.add('hidden');
+  document.getElementById('sessionView').classList.remove('hidden');
+  document.getElementById('sessionSubjectName').textContent = name;
+  document.getElementById('sessionSubjectName').style.color = color;
+  document.getElementById('sessionView').style.setProperty('--accent', color);
+  totalSeconds = minutes*60;
+  remaining = totalSeconds;
+  clearInterval(timerInterval);
+  running = false;
+  document.getElementById('startPauseBtn').textContent = 'Start';
+  lastDigits = ['-','-','-','-'];
+  updateDisplay();
+}
+
+document.getElementById('backToSubjects').addEventListener('click', ()=>{
+  clearInterval(timerInterval);
+  running=false;
+  document.getElementById('sessionView').classList.add('hidden');
+  document.getElementById('subjectPicker').classList.remove('hidden');
+});
+
+document.getElementById('finishedBackBtn').addEventListener('click', ()=>{
+  document.getElementById('finishedView').classList.add('hidden');
+  document.getElementById('subjectPicker').classList.remove('hidden');
+});
+
+function tick(){
+  if(remaining>0){
+    remaining--;
+    updateDisplay();
+  } else {
+    clearInterval(timerInterval);
+    running = false;
+    document.getElementById('sessionView').classList.add('hidden');
+    document.getElementById('finishedView').classList.remove('hidden');
+    document.getElementById('finishedSubjectName').textContent =
+      document.getElementById('sessionSubjectName').textContent + " — Arrived";
+  }
+}
+
+document.getElementById('startPauseBtn').addEventListener('click', ()=>{
+  running = !running;
+  const btn = document.getElementById('startPauseBtn');
+  if(running){
+    btn.textContent = 'Pause';
+    timerInterval = setInterval(tick, 1000);
+  } else {
+    btn.textContent = 'Start';
+    clearInterval(timerInterval);
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  clearInterval(timerInterval);
+  running=false;
+  document.getElementById('startPauseBtn').textContent='Start';
+  remaining = totalSeconds;
+  lastDigits = ['-','-','-','-'];
+  updateDisplay();
+});
+
+/* ---------------- Flashcards ---------------- */
+let cards = [];
+let currentIndex = 0;
+
+async function loadCards(){
+  try{
+    const res = await window.storage.get('flashcards');
+    cards = res ? JSON.parse(res.value) : [];
+  }catch(e){ cards = []; }
+  if(cards.length===0){
+    cards = [
+      {front:'What does "spaced repetition" mean?', back:'Reviewing material at increasing intervals over time to improve long-term retention.'},
+      {front:'How many gates does Social Studies have?', back:'Three — History, Geography, and Civics.'}
+    ];
+    await saveCards();
+  }
+  currentIndex = 0;
+  renderFlashArea();
+}
+
+async function saveCards(){
+  try{ await window.storage.set('flashcards', JSON.stringify(cards)); }
+  catch(e){ console.error('Could not save flashcards', e); }
+}
+
+function renderFlashArea(){
+  const area = document.getElementById('flashArea');
+  if(cards.length===0){
+    area.innerHTML = '<div class="empty-state">No cards yet — add one above to get started!</div>';
+    return;
+  }
+  if(currentIndex>=cards.length) currentIndex = 0;
+  const card = cards[currentIndex];
+  area.innerHTML = `
+    <div class="flash-count">Card ${currentIndex+1} of ${cards.length}</div>
+    <div class="flash-stage">
+      <div class="flip-card" id="flipCard">
+        <div class="flip-inner">
+          <div class="flip-face flip-front">${escapeHtml(card.front)}</div>
+          <div class="flip-face flip-back">${escapeHtml(card.back)}</div>
+        </div>
+      </div>
+      <div class="flash-nav">
+        <button id="prevCard">&larr; Prev</button>
+        <button id="flipBtn">Flip</button>
+        <button id="nextCard">Next &rarr;</button>
+      </div>
+      <button class="delete-card" id="deleteCard">Delete this card</button>
+    </div>
+  `;
+  document.getElementById('flipCard').addEventListener('click',()=>{
+    document.getElementById('flipCard').classList.toggle('flipped');
+  });
+  document.getElementById('flipBtn').addEventListener('click',(e)=>{
+    e.stopPropagation();
+    document.getElementById('flipCard').classList.toggle('flipped');
+  });
+  document.getElementById('prevCard').addEventListener('click',()=>{
+    currentIndex = (currentIndex-1+cards.length)%cards.length;
+    renderFlashArea();
+  });
+  document.getElementById('nextCard').addEventListener('click',()=>{
+    currentIndex = (currentIndex+1)%cards.length;
+    renderFlashArea();
+  });
+  document.getElementById('deleteCard').addEventListener('click', async ()=>{
+    cards.splice(currentIndex,1);
+    await saveCards();
+    renderFlashArea();
+  });
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+document.getElementById('addCardBtn').addEventListener('click', async ()=>{
+  const front = document.getElementById('cardFront').value.trim();
+  const back = document.getElementById('cardBack').value.trim();
+  if(!front || !back) return;
+  cards.push({front, back});
+  document.getElementById('cardFront').value='';
+  document.getElementById('cardBack').value='';
+  await saveCards();
+  currentIndex = cards.length-1;
+  renderFlashArea();
+});
+
+loadCards();
+
+/* ---------------- Tasks ---------------- */
+let tasks = [];
+
+async function loadTasks(){
+  try{
+    const res = await window.storage.get('tasks');
+    tasks = res ? JSON.parse(res.value) : [];
+  }catch(e){ tasks = []; }
+  renderTasks();
+}
+
+async function saveTasks(){
+  try{ await window.storage.set('tasks', JSON.stringify(tasks)); }
+  catch(e){ console.error('Could not save tasks', e); }
+}
+
+function formatDeadline(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' at ' +
+         d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+}
+
+function countdownText(iso){
+  const diffMs = new Date(iso).getTime() - Date.now();
+  const overdue = diffMs < 0;
+  const abs = Math.abs(diffMs);
+  const totalMin = Math.floor(abs/60000);
+  const days = Math.floor(totalMin/1440);
+  const hours = Math.floor((totalMin%1440)/60);
+  const mins = totalMin%60;
+  let parts = [];
+  if(days>0) parts.push(days+'d');
+  if(hours>0) parts.push(hours+'h');
+  if(days===0) parts.push(mins+'m');
+  const label = parts.join(' ');
+  return overdue ? (label+' overdue') : (label+' left');
+}
+
+function renderTasks(){
+  const list = document.getElementById('taskList');
+  if(tasks.length===0){
+    list.innerHTML = '<div class="empty-state">Nothing assigned yet — add a task and a due time above.</div>';
+  } else {
+    list.innerHTML = tasks.map((t,i)=>{
+      const diffMs = new Date(t.deadline).getTime() - Date.now();
+      const overdue = diffMs < 0 && !t.done;
+      const dueSoon = !overdue && diffMs < 15*60000 && !t.done;
+      const badgeClass = overdue ? 'overdue' : (dueSoon ? 'due-soon' : '');
+      return `
+      <li class="task-item ${t.done?'done':''} ${overdue?'overdue':''}">
+        <input type="checkbox" ${t.done?'checked':''} data-idx="${i}" class="task-check">
+        <div class="task-main">
+          <span class="task-text">${escapeHtml(t.text)}</span>
+          <span class="task-deadline">Due ${formatDeadline(t.deadline)}</span>
+        </div>
+        <span class="task-countdown ${badgeClass}" data-idx="${i}">
+          ${t.done ? 'Done' : countdownText(t.deadline)}
+        </span>
+        <button class="remove" data-idx="${i}">✕</button>
+      </li>
+    `;}).join('');
+  }
+  document.querySelectorAll('.task-check').forEach(cb=>{
+    cb.addEventListener('change', async ()=>{
+      tasks[parseInt(cb.dataset.idx)].done = cb.checked;
+      await saveTasks();
+      renderTasks();
+    });
+  });
+  document.querySelectorAll('.remove').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      tasks.splice(parseInt(btn.dataset.idx),1);
+      await saveTasks();
+      renderTasks();
+    });
+  });
+  const doneCount = tasks.filter(t=>t.done).length;
+  document.getElementById('taskProgress').textContent =
+    tasks.length ? `${doneCount} of ${tasks.length} tasks done` : '';
+}
+
+document.getElementById('taskForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const input = document.getElementById('taskInput');
+  const deadlineInput = document.getElementById('taskDeadline');
+  const text = input.value.trim();
+  const deadline = deadlineInput.value;
+  if(!text || !deadline) return;
+  tasks.push({text, deadline: new Date(deadline).toISOString(), done:false});
+  input.value='';
+  deadlineInput.value='';
+  await saveTasks();
+  renderTasks();
+});
+
+setInterval(()=>{
+  document.querySelectorAll('.task-countdown').forEach(el=>{
+    const idx = parseInt(el.dataset.idx);
+    const t = tasks[idx];
+    if(!t) return;
+    if(t.done){ el.textContent = 'Done'; return; }
+    el.textContent = countdownText(t.deadline);
+    el.classList.remove('overdue','due-soon');
+    const diffMs = new Date(t.deadline).getTime() - Date.now();
+    if(diffMs < 0){ el.classList.add('overdue'); }
+    else if(diffMs < 15*60000){ el.classList.add('due-soon'); }
+  });
+}, 30000);
+
+loadTasks();
+</script>
+</body>
+</html>
